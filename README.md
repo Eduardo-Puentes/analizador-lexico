@@ -1,42 +1,52 @@
-# analizador-lexico
+# Analizador Lexico: trabajos del repositorio
 
-Analizador léxico para un subconjunto de C usando `ply.lex`.
+Este repositorio contiene varios trabajos relacionados con analisis de codigo.
 
-## Requisitos
+## Proyectos incluidos
 
-Crea un environment
+### 1. Analizador lexico para C
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
+Carpeta:
+
+```text
+clang-analizador-lexico/
 ```
 
-Instala la dependencia del proyecto:
+Contenido:
 
-```bash
-python3 -m pip install -r requirements.txt
+- analizador lexico para un subconjunto de C usando `ply.lex`
+- script principal del lexer
+- casos de prueba
+- justificacion del fragmento de lenguaje seleccionado
+
+Lee el README de este proyecto para instrucciones de uso:
+
+[README de clang-analizador-lexico](./clang-analizador-lexico/README.md)
+
+### 2. Comparador de programas Python
+
+Carpeta:
+
+```text
+comparador_codigo_python/
 ```
 
-## Ejecutar el lexer
+Contenido:
 
-Con el ejemplo integrado:
+- comparador de similitud entre programas Python
+- variante en texto llano
+- variante preprocesada
+- deteccion de subcadenas comunes con `suffix array`, `LCP` y `BWT`
+- comparacion por pares y comparacion por dataset
+- generacion de reportes en Markdown
 
-```bash
-python3 clang-analizador-lexico/clang-lexer.py
-```
+Lee el README de este proyecto para instrucciones de uso y explicacion interna:
 
-Con un archivo de entrada:
+[README de comparador_codigo_python](./comparador_codigo_python/README.md)
 
-```bash
-python3 clang-analizador-lexico/clang-lexer.py clang-analizador-lexico/tests/inputs/valid-basic.c
-```
+## Nota
 
-## Ejecutar los tests
+Cada proyecto tiene su propia documentacion dentro de su carpeta. Para ejecutar,
+probar o entender el funcionamiento interno de un trabajo, consulta primero el
+README correspondiente dentro de ese proyecto.
 
-```bash
-python3 clang-analizador-lexico/tests/run_lexer_tests.py
-```
-
-## Justificación
-
-La justificación formal del fragmento seleccionado se encuentra dentro de la carpeta `clang-analizador-lexico`, en el archivo `clang-analizador-lexico/justificacion-fragmento-c.md`.
