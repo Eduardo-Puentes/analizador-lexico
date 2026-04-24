@@ -39,6 +39,10 @@ Contenido:
 - deteccion de subcadenas comunes con `suffix array`, `LCP` y `BWT`
 - comparacion por pares y comparacion por dataset
 - generacion de reportes en Markdown
+- en la rama `separated-comparision` tambien existe una implementacion
+  separada con:
+  - comparador basado en `difflib`
+  - comparador basado en `suffix array` y `BWT`
 
 Lee el README de este proyecto para instrucciones de uso y explicacion interna:
 
