@@ -4,6 +4,36 @@ Este proyecto implementa un comparador de similitud entre programas Python
 inspirado en las ideas del articulo `A Program for Identifying Duplicated Code`
 de Brenda S. Baker.
 
+## Nota sobre ramas
+
+La rama `main` contiene el enfoque actual del proyecto:
+
+- deteccion principal de similitud con `suffix array`, `LCP` y `BWT`
+- uso de `difflib` solo para mostrar el diff de los bloques encontrados
+
+Si quieres probar la version donde los dos comparadores estan separados
+explicitamente:
+
+- `Comparador 1: diff`
+- `Comparador 2: suffix array/BWT`
+
+debes clonar el repositorio y cambiar a la rama:
+
+```text
+separated-comparision
+```
+
+Comandos:
+
+```bash
+git clone https://github.com/Eduardo-Puentes/analizador-lexico.git
+cd analizador-lexico
+git checkout -b separated-comparision origin/separated-comparision
+```
+
+En esa rama se documenta y se prueba el enfoque con ambas estrategias por
+separado.
+
 El comparador tiene dos modos:
 
 - `plain_text`: compara lineas reales del programa.
