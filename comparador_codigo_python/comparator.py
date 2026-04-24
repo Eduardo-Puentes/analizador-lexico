@@ -35,6 +35,7 @@ class PreparedSequence:
 
 @dataclass
 class ComparisonResult:
+    strategy: str
     mode: str
     algorithm: str
     file_a: Path
@@ -320,6 +321,42 @@ def _extract_matches_from_suffix_array(
     return _filter_maximal_matches(raw_matches), suffix_array, bwt
 
 
+def _extract_matches_with_diff(
+    seq_a: list[str],
+    seq_b: list[str],
+    display_a: list[list[str]],
+    display_b: list[list[str]],
+    file_a: Path,
+    file_b: Path,
+    min_match_lines: int,
+) -> list[MatchSection]:
+    matcher = difflib.SequenceMatcher(a=seq_a, b=seq_b, autojunk=False)
+    matches: list[MatchSection] = []
+
+    for block in matcher.get_matching_blocks():
+        if block.size < min_match_lines:
+            continue
+        if block.a >= len(seq_a) or block.b >= len(seq_b):
+            continue
+
+        lines_a = [line for unit in display_a[block.a : block.a + block.size] for line in unit]
+        lines_b = [line for unit in display_b[block.b : block.b + block.size] for line in unit]
+        matches.append(
+            MatchSection(
+                start_a=block.a + 1,
+                end_a=block.a + block.size,
+                start_b=block.b + 1,
+                end_b=block.b + block.size,
+                length=block.size,
+                lines_a=lines_a,
+                lines_b=lines_b,
+                diff_lines=_build_diff(lines_a, lines_b, file_a, file_b),
+            )
+        )
+
+    return _filter_maximal_matches(matches)
+
+
 def _similarity_percentage(matches: list[MatchSection], total_a: int, total_b: int) -> tuple[float, int]:
     covered_a: set[int] = set()
     covered_b: set[int] = set()
@@ -333,7 +370,13 @@ def _similarity_percentage(matches: list[MatchSection], total_a: int, total_b: i
     return (matched_units / base) * 100.0, matched_units
 
 
-def compare_programs(file_a: Path, file_b: Path, mode: str, min_match_lines: int = MIN_MATCH_LINES) -> ComparisonResult:
+def compare_programs(
+    file_a: Path,
+    file_b: Path,
+    mode: str,
+    strategy: str = "suffix_array",
+    min_match_lines: int = MIN_MATCH_LINES,
+) -> ComparisonResult:
     if mode == "plain_text":
         prepared_a = plain_text_lines(file_a)
         prepared_b = plain_text_lines(file_b)
@@ -345,23 +388,43 @@ def compare_programs(file_a: Path, file_b: Path, mode: str, min_match_lines: int
 
     seq_a = prepared_a.normalized_units
     seq_b = prepared_b.normalized_units
-    encoded_a, encoded_b, _ = _encode_sequences(seq_a, seq_b)
-    matches, suffix_array, bwt = _extract_matches_from_suffix_array(
-        encoded_a=encoded_a,
-        encoded_b=encoded_b,
-        original_a=seq_a,
-        original_b=seq_b,
-        display_a=prepared_a.display_units,
-        display_b=prepared_b.display_units,
-        file_a=file_a,
-        file_b=file_b,
-        min_match_lines=min_match_lines,
-    )
+
+    if strategy == "suffix_array":
+        encoded_a, encoded_b, _ = _encode_sequences(seq_a, seq_b)
+        matches, suffix_array, bwt = _extract_matches_from_suffix_array(
+            encoded_a=encoded_a,
+            encoded_b=encoded_b,
+            original_a=seq_a,
+            original_b=seq_b,
+            display_a=prepared_a.display_units,
+            display_b=prepared_b.display_units,
+            file_a=file_a,
+            file_b=file_b,
+            min_match_lines=min_match_lines,
+        )
+        algorithm = "suffix_array + lcp + bwt + difflib.unified_diff"
+    elif strategy == "diff":
+        matches = _extract_matches_with_diff(
+            seq_a=seq_a,
+            seq_b=seq_b,
+            display_a=prepared_a.display_units,
+            display_b=prepared_b.display_units,
+            file_a=file_a,
+            file_b=file_b,
+            min_match_lines=min_match_lines,
+        )
+        suffix_array = []
+        bwt = []
+        algorithm = "difflib.SequenceMatcher + difflib.unified_diff"
+    else:
+        raise ValueError(f"Estrategia no soportada: {strategy}")
+
     similarity_percent, matched_units = _similarity_percentage(matches, len(seq_a), len(seq_b))
 
     return ComparisonResult(
+        strategy=strategy,
         mode=mode,
-        algorithm="suffix_array + lcp + bwt + difflib.unified_diff",
+        algorithm=algorithm,
         file_a=file_a,
         file_b=file_b,
         total_units_a=len(seq_a),

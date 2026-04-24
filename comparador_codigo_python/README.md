@@ -4,18 +4,35 @@ Este proyecto implementa un comparador de similitud entre programas Python
 inspirado en las ideas del articulo `A Program for Identifying Duplicated Code`
 de Brenda S. Baker.
 
-El comparador tiene dos modos:
+La solucion ahora se presenta como dos comparadores separados:
+
+- `Comparador 1: diff`
+- `Comparador 2: suffix array/BWT`
+
+Cada comparador tiene dos modos:
 
 - `plain_text`: compara lineas reales del programa.
 - `preprocessed`: compara una version normalizada del programa para detectar
   similitud estructural aunque cambien nombres o literales.
 
-Internamente la deteccion de subcadenas comunes se apoya en:
+Internamente, los enfoques quedan asi:
 
-- `suffix array`
-- `LCP` (`Longest Common Prefix`)
-- `BWT` (`Burrows-Wheeler Transform`)
-- `difflib.unified_diff` para mostrar diferencias dentro de cada bloque
+- `diff`: `difflib.SequenceMatcher` + `difflib.unified_diff`
+- `suffix_array`: `suffix array` + `LCP` + `BWT` + `difflib.unified_diff`
+
+## Requisitos
+
+Este proyecto no agrega dependencias externas nuevas.
+Usa solamente la biblioteca estandar de Python.
+
+Si deseas instalar todas las dependencias del repositorio desde la raiz:
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+Actualmente `requirements.txt` solo contiene `ply`, que es usado por el
+proyecto `clang-analizador-lexico`.
 
 ## Como comparar dos programas
 
@@ -33,8 +50,8 @@ C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 
 El archivo `reporte_similitud.md` incluye:
 
-- porcentaje de similitud en texto llano
-- porcentaje de similitud en texto preprocesado
+- resultados del comparador basado en diff
+- resultados del comparador basado en suffix array/BWT
 - bloques similares encontrados
 - fragmentos de codigo con indentacion real
 - diff del bloque encontrado
@@ -43,7 +60,8 @@ El archivo `reporte_similitud.md` incluye:
 
 ## Como probar con un dataset
 
-Para comparar todos los pares de archivos `.py` dentro de un dataset:
+Para comparar todos los pares de archivos `.py` dentro de un dataset con el
+comparador de `suffix_array`:
 
 ```powershell
 C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py
@@ -68,10 +86,16 @@ El reporte del dataset contiene una tabla con:
 - similitud en texto llano
 - similitud en texto preprocesado
 
+Para usar el comparador de `diff` sobre un dataset:
+
+```powershell
+C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py --strategy diff
+```
+
 Para usar otro dataset:
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py --dataset ruta\mi_dataset --output mi_reporte.md
+C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py --dataset ruta\mi_dataset --output mi_reporte.md --strategy suffix_array
 ```
 
 La carpeta indicada debe contener archivos `.py`.
@@ -92,7 +116,7 @@ comparables y buscar subcadenas comunes entre dos programas.
 
 ## Vista general del flujo
 
-Internamente, el comparador sigue este pipeline:
+Internamente, el comparador `suffix_array` sigue este pipeline:
 
 1. Lee dos archivos Python.
 2. Convierte cada archivo en una secuencia de unidades.
@@ -116,9 +140,9 @@ En `comparator.py` hay tres estructuras clave:
   - `display_units`: bloques originales que luego se imprimen en el reporte.
 - `MatchSection`: representa una coincidencia detectada entre ambos programas.
   Guarda posiciones, longitud, fragmentos y diff.
-- `ComparisonResult`: resume toda una corrida de comparacion, incluyendo
-  porcentaje de similitud, lista de matches, tamano del suffix array y una
-  vista corta de la BWT.
+- `ComparisonResult`: resume toda una corrida de comparacion, incluyendo la
+  estrategia usada, porcentaje de similitud, lista de matches, tamano del
+  suffix array y una vista corta de la BWT.
 
 ## Preparacion de secuencias
 
@@ -276,6 +300,23 @@ transformacion asociada al arreglo de sufijos.
 
 ## Deteccion de coincidencias
 
+### Comparador 1: diff
+
+La estrategia `diff` usa `difflib.SequenceMatcher`.
+
+El procedimiento es:
+
+1. Preparar las secuencias en `plain_text` o `preprocessed`.
+2. Ejecutar `SequenceMatcher` sobre las unidades normalizadas.
+3. Tomar los bloques devueltos por `get_matching_blocks()`.
+4. Filtrar los que no alcancen `MIN_MATCH_LINES`.
+5. Reconstruir el fragmento visible con `display_units`.
+6. Generar el diff del bloque con `difflib.unified_diff`.
+
+Esta variante deja muy clara la solucion basada en herramientas tipo diff.
+
+### Comparador 2: suffix array/BWT
+
 La parte central esta en `_extract_matches_from_suffix_array()`.
 
 El procedimiento es:
@@ -378,13 +419,16 @@ solapan.
 
 `generate_report.py` hace lo siguiente:
 
-1. Ejecuta `compare_programs()` en modo `plain_text`.
-2. Ejecuta `compare_programs()` en modo `preprocessed`.
-3. Genera un Markdown con:
+1. Ejecuta el comparador `diff` en modo `plain_text`.
+2. Ejecuta el comparador `diff` en modo `preprocessed`.
+3. Ejecuta el comparador `suffix_array` en modo `plain_text`.
+4. Ejecuta el comparador `suffix_array` en modo `preprocessed`.
+5. Genera un Markdown con:
    - descripcion conceptual
-   - detalles del algoritmo
-   - tamano del suffix array
-   - vista corta de BWT
+   - resultados de ambos comparadores
+   - detalles del algoritmo de cada uno
+   - tamano del suffix array cuando aplica
+   - vista corta de BWT cuando aplica
    - porcentaje de similitud
    - secciones encontradas
    - diff de cada bloque
@@ -398,7 +442,8 @@ Flujo:
 
 1. Lee la carpeta del dataset.
 2. Genera combinaciones de archivos de dos en dos.
-3. Ejecuta `compare_programs()` en ambos modos para cada par.
+3. Ejecuta `compare_programs()` en ambos modos para cada par usando la
+   estrategia elegida.
 4. Ordena resultados por similitud preprocesada.
 5. Escribe `reporte_dataset.md`.
 
