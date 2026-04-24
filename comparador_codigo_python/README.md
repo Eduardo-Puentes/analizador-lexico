@@ -22,13 +22,13 @@ Internamente la deteccion de subcadenas comunes se apoya en:
 Para comparar dos archivos Python y generar un reporte detallado:
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe generate_report.py ruta\programa1.py ruta\programa2.py --output reporte_similitud.md
+python generate_report.py ruta\programa1.py ruta\programa2.py --output reporte_similitud.md
 ```
 
 Ejemplo con los archivos incluidos:
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe generate_report.py samples\programa_a.py samples\programa_b.py --output reporte_similitud.md
+python generate_report.py samples\programa_a.py samples\programa_b.py --output reporte_similitud.md
 ```
 
 El archivo `reporte_similitud.md` incluye:
@@ -46,7 +46,7 @@ El archivo `reporte_similitud.md` incluye:
 Para comparar todos los pares de archivos `.py` dentro de un dataset:
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py
+python batch_compare.py
 ```
 
 Ese comando usa por defecto:
@@ -71,7 +71,7 @@ El reporte del dataset contiene una tabla con:
 Para usar otro dataset:
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py --dataset ruta\mi_dataset --output mi_reporte.md
+python batch_compare.py --dataset ruta\mi_dataset --output mi_reporte.md
 ```
 
 La carpeta indicada debe contener archivos `.py`.
