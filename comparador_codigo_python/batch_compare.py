@@ -1,33 +1,64 @@
-from pathlib import Path
+from __future__ import annotations
+
+import argparse
 from itertools import combinations
+from pathlib import Path
+
 from comparator import compare_programs
 
-DATASET_DIR = Path("samples/dataset")
-archivos = sorted(DATASET_DIR.glob("*.py"))
-print(f"Archivos encontrados: {len(archivos)}")
 
-if not archivos:
-    print("ERROR: no se encontraron archivos en samples/dataset/")
-    exit()
+DEFAULT_DATASET_DIR = Path("samples/dataset")
+DEFAULT_OUTPUT = Path("reporte_dataset.md")
 
-resultados = []
-pares = list(combinations(archivos, 2))
-print(f"Comparando {len(pares)} pares...\n")
 
-for i, (a, b) in enumerate(pares, 1):
-    print(f"[{i}/{len(pares)}] {a.name} vs {b.name}", end="... ")
-    plain = compare_programs(a, b, mode="plain_text")
-    prep  = compare_programs(a, b, mode="preprocessed")
-    resultados.append((a.name, b.name, plain.similarity_percent, prep.similarity_percent))
-    print(f"llano={plain.similarity_percent:.1f}% | preprocesado={prep.similarity_percent:.1f}%")
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Compara todos los pares de archivos Python dentro de un dataset."
+    )
+    parser.add_argument("--dataset", default=str(DEFAULT_DATASET_DIR), help="Carpeta que contiene archivos .py")
+    parser.add_argument("--output", default=str(DEFAULT_OUTPUT), help="Ruta del archivo Markdown de salida")
+    return parser.parse_args()
 
-# Guardar reporte
-output = Path("reporte_dataset.md")
-lines = ["# Resultados de comparación del dataset\n"]
-lines.append(f"| Archivo A | Archivo B | Texto llano | Preprocesado |")
-lines.append(f"|-----------|-----------|-------------|--------------|")
-for a, b, p, pp in sorted(resultados, key=lambda x: x[3], reverse=True):
-    lines.append(f"| {a} | {b} | {p:.1f}% | {pp:.1f}% |")
 
-output.write_text("\n".join(lines), encoding="utf-8")
-print(f"\nReporte guardado en: {output.resolve()}")
+def main() -> None:
+    args = parse_args()
+    dataset_dir = Path(args.dataset).resolve()
+    output = Path(args.output).resolve()
+
+    archivos = sorted(dataset_dir.glob("*.py"))
+    print(f"Dataset: {dataset_dir}")
+    print(f"Archivos encontrados: {len(archivos)}")
+
+    if not archivos:
+        raise SystemExit(f"ERROR: no se encontraron archivos .py en {dataset_dir}")
+
+    resultados = []
+    pares = list(combinations(archivos, 2))
+    print(f"Comparando {len(pares)} pares...\n")
+
+    for index, (a, b) in enumerate(pares, start=1):
+        print(f"[{index}/{len(pares)}] {a.name} vs {b.name}", end="... ")
+        plain = compare_programs(a, b, mode="plain_text")
+        preprocessed = compare_programs(a, b, mode="preprocessed")
+        resultados.append((a.name, b.name, plain.similarity_percent, preprocessed.similarity_percent))
+        print(
+            f"llano={plain.similarity_percent:.1f}% | "
+            f"preprocesado={preprocessed.similarity_percent:.1f}%"
+        )
+
+    lines = ["# Resultados de comparacion del dataset", ""]
+    lines.append(f"- Dataset analizado: `{dataset_dir}`")
+    lines.append(f"- Archivos: {len(archivos)}")
+    lines.append(f"- Pares comparados: {len(pares)}")
+    lines.append("")
+    lines.append("| Archivo A | Archivo B | Texto llano | Preprocesado |")
+    lines.append("|-----------|-----------|-------------|--------------|")
+    for a, b, plain, preprocessed in sorted(resultados, key=lambda item: item[3], reverse=True):
+        lines.append(f"| {a} | {b} | {plain:.1f}% | {preprocessed:.1f}% |")
+
+    output.write_text("\n".join(lines), encoding="utf-8")
+    print(f"\nReporte guardado en: {output}")
+
+
+if __name__ == "__main__":
+    main()

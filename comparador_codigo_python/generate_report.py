@@ -26,16 +26,25 @@ def build_report(file_a: Path, file_b: Path) -> str:
     lines.append(
         "La solucion retoma dos ideas centrales del articulo `A Program for Identifying Duplicated Code`: "
         "comparar por secuencias lineales y, en una segunda variante, aplicar un preprocesamiento que "
-        "permita detectar coincidencias estructurales aunque cambien nombres de variables o literales."
+        "permita detectar coincidencias estructurales aunque cambien nombres de variables o literales. "
+        "La deteccion de subcadenas comunes se implementa con suffix array, LCP y BWT."
     )
     lines.append("")
     lines.append("## Archivos comparados")
     lines.append(f"- Programa A: `{file_a.name}`")
     lines.append(f"- Programa B: `{file_b.name}`")
     lines.append("")
+    lines.append("## Algoritmo")
+    lines.append(f"- Variante texto llano: `{plain.algorithm}`")
+    lines.append(f"- Variante preprocesada: `{preprocessed.algorithm}`")
+    lines.append(f"- Tamano suffix array texto llano: {plain.suffix_array_size}")
+    lines.append(f"- Tamano suffix array preprocesado: {preprocessed.suffix_array_size}")
+    lines.append(f"- Vista BWT texto llano: `{plain.bwt_preview}`")
+    lines.append(f"- Vista BWT preprocesado: `{preprocessed.bwt_preview}`")
+    lines.append("")
     lines.append("## Medida de similitud propuesta")
     lines.append(
-        "Se usa la suma de las longitudes de las subcadenas comunes reportadas por `difflib.SequenceMatcher`, "
+        "Se usa la cobertura total de las subcadenas comunes reportadas por el analisis con suffix array/LCP, "
         "dividida entre la longitud del programa mas corto. La formula es:"
     )
     lines.append("")
@@ -84,13 +93,20 @@ def build_report(file_a: Path, file_b: Path) -> str:
             lines.append(format_block(match.lines_b))
             lines.append("```")
             lines.append("")
+            if match.diff_lines:
+                lines.append("**Diff del bloque**")
+                lines.append("")
+                lines.append("```diff")
+                lines.append(format_block(match.diff_lines))
+                lines.append("```")
+                lines.append("")
 
     lines.append("## Conclusiones")
     lines.append(
         "La comparacion en texto llano solo detecta coincidencias literales, mientras que la comparacion "
         "preprocesada encuentra bloques con la misma estructura aun cuando cambian identificadores, "
-        "constantes o cadenas. Esto replica la intuicion del articulo: el preprocesamiento permite revelar "
-        "duplicacion con renombrado."
+        "constantes o cadenas. El uso de suffix array y BWT permite justificar que la busqueda de subcadenas "
+        "comunes ya no depende de `SequenceMatcher`, sino de una estructura clasica de busqueda sobre sufijos."
     )
     lines.append("")
     return "\n".join(lines)
