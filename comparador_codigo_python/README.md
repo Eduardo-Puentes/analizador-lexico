@@ -36,16 +36,28 @@ proyecto `clang-analizador-lexico`.
 
 ## Como comparar dos programas
 
-Para comparar dos archivos Python y generar un reporte detallado:
+El script `generate_report.py` ejecuta ambas estrategias en una sola corrida:
+
+- `Comparador 1: diff`
+- `Comparador 2: suffix array/BWT`
+
+Por eso, al comparar dos archivos con este script, el reporte incluye:
+
+- `diff` en `plain_text`
+- `diff` en `preprocessed`
+- `suffix_array` en `plain_text`
+- `suffix_array` en `preprocessed`
+
+Comando general:
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe generate_report.py ruta\programa1.py ruta\programa2.py --output reporte_similitud.md
+python generate_report.py ruta\programa1.py ruta\programa2.py --output reporte_similitud.md
 ```
 
 Ejemplo con los archivos incluidos:
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe generate_report.py samples\programa_a.py samples\programa_b.py --output reporte_similitud.md
+python generate_report.py samples\programa_a.py samples\programa_b.py --output reporte_similitud.md
 ```
 
 El archivo `reporte_similitud.md` incluye:
@@ -58,25 +70,35 @@ El archivo `reporte_similitud.md` incluye:
 - tamano del suffix array
 - vista resumida de la BWT
 
+En comparacion individual no necesitas elegir estrategia por parametro:
+`generate_report.py` ejecuta ambas automaticamente.
+
 ## Como probar con un dataset
 
-Para comparar todos los pares de archivos `.py` dentro de un dataset con el
-comparador de `suffix_array`:
+En comparacion por dataset si debes elegir explicitamente la estrategia.
+
+### Dataset con `diff`
+
+Para comparar todos los pares de archivos `.py` usando el comparador basado en
+`diff`:
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py
+python batch_compare.py --strategy diff --output reporte_dataset_diff.md
 ```
 
-Ese comando usa por defecto:
+### Dataset con `suffix_array`
+
+Para comparar todos los pares de archivos `.py` usando el comparador basado en
+`suffix_array`:
+
+```powershell
+python batch_compare.py --strategy suffix_array --output reporte_dataset_suffix.md
+```
+
+Ambos comandos usan por defecto:
 
 ```text
 samples/dataset/
-```
-
-y genera:
-
-```text
-reporte_dataset.md
 ```
 
 El reporte del dataset contiene una tabla con:
@@ -86,16 +108,16 @@ El reporte del dataset contiene una tabla con:
 - similitud en texto llano
 - similitud en texto preprocesado
 
-Para usar el comparador de `diff` sobre un dataset:
+### Usar otro dataset con `diff`
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py --strategy diff
+python batch_compare.py --dataset ruta\mi_dataset --output mi_reporte_diff.md --strategy diff
 ```
 
-Para usar otro dataset:
+### Usar otro dataset con `suffix_array`
 
 ```powershell
-C:\Users\EMIS4\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe batch_compare.py --dataset ruta\mi_dataset --output mi_reporte.md --strategy suffix_array
+python batch_compare.py --dataset ruta\mi_dataset --output mi_reporte_suffix.md --strategy suffix_array
 ```
 
 La carpeta indicada debe contener archivos `.py`.
