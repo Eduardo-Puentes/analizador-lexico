@@ -2,6 +2,8 @@
 
 Este repositorio contiene varios trabajos relacionados con analisis de codigo.
 
+Link del repositorio: https://github.com/Eduardo-Puentes/analizador-lexico
+
 ## Dependencias
 
 La unica dependencia externa declarada a nivel repositorio es:
